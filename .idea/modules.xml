@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Frequent-Itemsets.iml" filepath="$PROJECT_DIR$/.idea/modules/Frequent-Itemsets.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/scala-spark-boilerplate-build.iml" filepath="$PROJECT_DIR$/.idea/modules/scala-spark-boilerplate-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/id2222-lab2.iml" filepath="$PROJECT_DIR$/.idea/modules/id2222-lab2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/id2222-lab2-build.iml" filepath="$PROJECT_DIR$/.idea/modules/id2222-lab2-build.iml" />
     </modules>
   </component>
 </project>
