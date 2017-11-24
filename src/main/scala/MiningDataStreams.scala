@@ -20,34 +20,25 @@ object MiningDataStreams {
       .setMaster("local[*]")
   val sc = new SparkContext(conf)*/
 
-  /*TODO Checklist
-    -Hashfunction OK
-    -Leading Zeroes OK
-    -Index OK
-    -ExtractHash, ExtractIndex OK OK
-   */
-
-    //val filePath= "src/test"
     val filePath = "src/moreno_health/out.moreno_health_health"
     //val filePath = "src/actor-collaboration/out.actor-collaboration"
     //val filePath = "src/com-amazon/out.com-amazon"
 
-    //doHyperBall(filePath,7,1024)
-    println(getHyperBall(filePath,1,5))
 
-        //.map(s=>s.split(" "))
-    //val nodes = graph.map(_(0))
-
-    //THIS IS THE CODE FOR HYPERLOGLOG
-    /*
+    println("Applying HyperLogLog:")
     val graph = Source.fromFile(filePath).getLines
     val count = hyperLogLog(graph,1024)
-    println("Found out: "+count)
-    */
+    println("Estimated Size: "+count)
 
-    //println("Actual: "+Source.fromFile(filePath).getLines.toList.map(_.split(" ")(0)).distinct.size)
+    println
+    println("Doing Hyperball Iterations:")
+    doHyperBall(filePath,7,1024)
+    println
+    println("Getting Hyperball")
+    println(getHyperBall(filePath,6,5))
   }
 
+  //Read the value the Hyperball gave from the output files by subtracting the target iteration by this iteration -1
   def getHyperBall(filePath: String, iterations: Int, node: Int): Int = {
     val counter1 = readCounter(filePath+"ITER"+iterations+"-NODE"+node)
     val counter2 = readCounter(filePath+"ITER"+(iterations-1)+"-NODE"+node)
@@ -59,11 +50,12 @@ object MiningDataStreams {
     var b=1
     if(hashAmount>2)
       b = (Math.log(2*(hashAmount-1))/Math.log(2)).toInt
-    val hashLength =Integer.BYTES*8-b
 
+    //Size the counter should have
     val countersSize = Math.pow(2,b).toInt
 
     val graph = Source.fromFile(filePath).getLines
+    //set currentnodes to a special value that cant exist in the graph
     var currentNode = "-1"
     graph.foreach{m =>
       val n = m.split(" ")(0)
@@ -84,11 +76,13 @@ object MiningDataStreams {
       val graph = Source.fromFile(filePath).getLines
       var currentNode = "-1"
       var neighbours = List.fill(0)("")
+      //iterate over all lines in the graph
       graph.foreach{m =>
+        //m is the line and m is the node
         val n = m.split(" ")(0)
         //Corner Case
         if(currentNode=="-1") currentNode=n
-        //do union of with neighbours
+        //do union with neighbours
         if(n!=currentNode) {
           //read current counter of X
           var counters = readCounter(filePath+"ITER"+(i-1)+"-NODE"+currentNode)
@@ -134,7 +128,7 @@ object MiningDataStreams {
       val lzs = leadingZeroes(extractHash(nHash,b))
       var index = extractIndex(nHash,b)
       if(index<0) index = -1*index+(countersSize/2)-1
-      //println(index+"---"+lzs)
+      //If the leading zeroes is bigger than the current counter at the index, then save it
       if(counters(index)<lzs)
         counters(index) = lzs
     }
@@ -146,15 +140,12 @@ object MiningDataStreams {
       counterRefreshing(n1)
       counterRefreshing(n2)
     }
+    //Constant taken from the HyperLogLog paper
     val constant =1.4
     //SUM OF ALL (2^(-M[i])) ^-1 like in the HyperLogLog
-    //TODO does this line make sense? it should be the same as initializing counters to all -infinity
     counters = counters.filter(_>=0)
     val inverseHarmonicCount = Math.pow(counters.map(M => Math.pow(2,-M)).reduce(_+_),-1)
     var aggregate = constant*Math.pow(counters.size,2)*inverseHarmonicCount
-    //TODO work with this print
-    //counters.foreach(println)
-    println("harmonicCount: "+inverseHarmonicCount)
 
     return aggregate
   }
@@ -165,6 +156,7 @@ object MiningDataStreams {
   //turn the most significant b bits to 0
   def extractHash(num: Int, b: Int): Int = num & (Math.pow(2,Integer.BYTES*8-b).toInt-1)
 
+  //get the leading zeroes of the bits of an Integer
   def leadingZeroes(num: Int): Int = {
     var result =0
     var number = num
@@ -178,6 +170,7 @@ object MiningDataStreams {
     return result
   }
 
+  //Count what the counter says
   def countCounter(counter: Array[Int]): Int ={
     val constant = 1.4
     val counters = counter.filter(_>=0)
@@ -186,6 +179,7 @@ object MiningDataStreams {
     return aggregate.toInt
   }
 
+  //Write the counter to a file
   def writeCounter(fileName: String, counter: Array[Int]): Unit ={
     if(counter == null) return
     val pw = new PrintWriter((new File(fileName)))
@@ -193,6 +187,7 @@ object MiningDataStreams {
     pw.close
   }
 
+  //Read a counter from a file
   def readCounter(fileName: String): Array[Int]={
     try {
       val file = Source.fromFile(fileName).getLines.toList
